@@ -1,0 +1,14 @@
+# rpm --import https://www.elrepo.org/RPM-GPG-KEY-elrepo.org
+# rpm -Uvh http://www.elrepo.org/elrepo-release-7.0-2.el7.elrepo.noarch.rpm
+# yum --enablerepo=elrepo-kernel install kernel-ml -y
+# rpm -qa | grep kernel
+# egrep ^menuentry /etc/grub2.cfg | cut -f 2 -d \'
+# grub2-set-default "CentOS Linux (5.6.5-1.el7.elrepo.x86_64) 7 (Core)"
+# shutdown -r now
+# uname -r
+# echo 'net.core.default_qdisc=fq' | tee -a /etc/sysctl.conf
+# echo 'net.ipv4.tcp_congestion_control=bbr' | tee -a /etc/sysctl.conf
+# sysctl -p
+# sysctl net.ipv4.tcp_available_congestion_control
+# sysctl -n net.ipv4.tcp_congestion_control
+# lsmod | grep bbr

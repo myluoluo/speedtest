@@ -1,12 +1,104 @@
 <?php
+error_reporting(0);
+define("reCAPTCHA_SECRET", "");
+function validate_rechapcha($response)
+{
+    if(reCAPTCHA_SECRET == '') return true;
+    
+    // Verifying the user's response (https://developers.google.com/recaptcha/docs/verify)
+    $verifyURL = 'https://www.google.com/recaptcha/api/siteverify';
+
+    $query_data = [
+        'secret' => reCAPTCHA_SECRET,
+        'response' => $response,
+        // 'remoteip' => $_SERVER['REMOTE_ADDR']
+    ];
+
+    // Collect and build POST data
+    $post_data = http_build_query($query_data, '', '&');
+
+    // Send data on the best possible way
+    if (function_exists('curl_init') && function_exists('curl_setopt') && function_exists('curl_exec'))
+    {
+        // Use cURL to get data 10x faster than using file_get_contents or other methods
+        $ch = curl_init($verifyURL);
+        curl_setopt($ch, CURLOPT_POST, 1);
+        curl_setopt($ch, CURLOPT_POSTFIELDS, $post_data);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, 0);
+        curl_setopt($ch, CURLOPT_HTTPAUTH, CURLAUTH_BASIC);
+        curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 5);
+        curl_setopt($ch, CURLOPT_TIMEOUT, 5);
+        curl_setopt($ch, CURLOPT_HTTPHEADER, array('Accept: application/json', 'Content-type: application/x-www-form-urlencoded'));
+        $response = curl_exec($ch);
+        curl_close($ch);
+    }
+    else
+    {
+        // If server not have active cURL module, use file_get_contents
+        $opts = array('http' =>
+            array(
+                'method' => 'POST',
+                'header' => 'Content-type: application/x-www-form-urlencoded',
+                'content' => $post_data
+            )
+        );
+        $context = stream_context_create($opts);
+        $response = file_get_contents($verifyURL, false, $context);
+    }
+
+    // Verify all reponses and avoid PHP errors
+    if ($response)
+    {
+        $result = json_decode($response);
+        if ($result->success === true)
+        {
+            return true;
+        }
+        else
+        {
+            return $result;
+        }
+    }
+
+    // Dead end
+    return false;
+}
+
+$token = trim($_REQUEST["token"]);
+$tokenFile = "token/" . $_SERVER['REMOTE_ADDR'] . ".token";
+
+if($token == '' || !validate_rechapcha($_REQUEST["token"])) {
+    @unlink("token/" . $_SERVER['REMOTE_ADDR'] . ".token");
+    http_response_code(401);
+    echo json_encode(['processedString' => "Need verification", 'rawIspInfo' => ""]);
+    die();
+} else {
+    if(!is_dir("token")) {
+        @mkdir("token");
+    }
+    
+    // 清除旧的授权文件
+    $dir = scandir('token/');
+    foreach($dir as $v) {
+        if(strrchr($v, '.') == '.token' && is_file("token/$v")) {
+            $content = (int)file_get_contents("token/$v");
+            if(time() - $content > 120) {
+                @unlink("token/$v");
+            }
+        }
+    }
+    @unlink("token/" . $_SERVER['REMOTE_ADDR'] . ".token");
+
+    // 创建授权文件
+    file_put_contents($tokenFile, time());
+}
 
 /*
  * This script detects the client's IP address and fetches ISP info from ipinfo.io/
  * Output from this script is a JSON string composed of 2 objects: a string called processedString which contains the combined IP, ISP, Contry and distance as it can be presented to the user; and an object called rawIspInfo which contains the raw data from ipinfo.io (will be empty if isp detection is disabled).
  * Client side, the output of this script can be treated as JSON or as regular text. If the output is regular text, it will be shown to the user as is.
  */
-
-error_reporting(0);
 
 define('API_KEY_FILE', 'getIP_ipInfo_apikey.php');
 define('SERVER_LOCATION_CACHE_FILE', 'getIP_serverLocation.php');

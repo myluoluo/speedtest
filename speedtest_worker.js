@@ -65,7 +65,8 @@ var settings = {
 	telemetry_level: 0, // 0=disabled, 1=basic (results only), 2=full (results and timing) 3=debug (results+log)
 	url_telemetry: "results/telemetry.php", // path to the script that adds telemetry data to the database
 	telemetry_extra: "", //extra data that can be passed to the telemetry through the settings
-    forceIE11Workaround: false //when set to true, it will foce the IE11 upload test on all browsers. Debug only
+	forceIE11Workaround: false, //when set to true, it will foce the IE11 upload test on all browsers. Debug only
+	recaptcha: "" // reCAPTCHA
 };
 
 var xhr = null; // array of currently active xhr requests
@@ -313,7 +314,7 @@ function getIp(done) {
 		tlog("getIp failed, took " + (new Date().getTime() - startT) + "ms");
 		done();
 	};
-	xhr.open("GET", settings.url_getIp + url_sep(settings.url_getIp) + (settings.mpot ? "cors=true&" : "") + (settings.getIp_ispInfo ? "isp=true" + (settings.getIp_ispInfo_distance ? "&distance=" + settings.getIp_ispInfo_distance + "&" : "&") : "&") + "r=" + Math.random(), true);
+	xhr.open("GET", settings.url_getIp + url_sep(settings.url_getIp) + "token=" + settings.recaptcha + "&" + (settings.mpot ? "cors=true&" : "") + (settings.getIp_ispInfo ? "isp=true" + (settings.getIp_ispInfo_distance ? "&distance=" + settings.getIp_ispInfo_distance + "&" : "&") : "&") + "r=" + Math.random(), true);
 	xhr.send();
 }
 // download test, calls done function when it's over

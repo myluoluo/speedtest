@@ -1,4 +1,16 @@
 <?php
+error_reporting(0);
+$tokenFile = "token/" . $_SERVER['REMOTE_ADDR'] . ".token";
+if(!file_exists($tokenFile)) {
+    http_response_code(401);
+    die();
+} else {
+    $content = (int)file_get_contents($tokenFile);
+    if(time() - $content > 120) {
+        @unlink($tokenFile);
+        die();
+    }
+}
 
 // Disable Compression
 @ini_set('zlib.output_compression', 'Off');
